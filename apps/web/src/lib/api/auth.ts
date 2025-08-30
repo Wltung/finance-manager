@@ -1,16 +1,22 @@
-import fetcher from 'lib/fetcher';
-import { API_ENDPOINTS } from 'lib/constants/api-endpoints';
+import fetcher from '../fetcher';
+import { API_ENDPOINTS } from '../constants/api-endpoints';
 
-export interface LoginData {
+// Types for auth requests and responses
+export interface LoginRequest {
   emailOrUsername: string;
   password: string;
 }
 
-export interface RegisterData {
+export interface RegisterRequest {
   email: string;
   username: string;
   password: string;
   fullName?: string;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
 }
 
 export interface User {
@@ -24,122 +30,137 @@ export interface User {
 
 export interface AuthResponse {
   accessToken: string;
-  refreshToken: string;
   user: User;
   message: string;
 }
 
-export interface RefreshTokenResponse {
+export interface RefreshResponse {
   accessToken: string;
-  refreshToken: string;
 }
 
+export interface CheckAvailabilityResponse {
+  available: boolean;
+}
+
+export interface GetMeResponse {
+  user: User;
+}
+
+// Auth API functions
 export const authApi = {
-  /**
-   * Đăng nhập người dùng
-   */
-  async login(data: LoginData): Promise<AuthResponse> {
-    const response = await fetcher.post<AuthResponse>(API_ENDPOINTS.AUTH.LOGIN, data);
-    
-    // Lưu tokens sau khi login thành công
-    fetcher.setAuthToken(response.accessToken, response.refreshToken);
-    
-    return response;
-  },
-
-  /**
-   * Đăng ký người dùng mới
-   */
-  async register(data: RegisterData): Promise<AuthResponse> {
-    const response = await fetcher.post<AuthResponse>(API_ENDPOINTS.AUTH.REGISTER, data);
-    
-    // Lưu tokens sau khi register thành công
-    fetcher.setAuthToken(response.accessToken, response.refreshToken);
-    
-    return response;
-  },
-
-  /**
-   * Đăng xuất người dùng
-   */
-  async logout(): Promise<void> {
+  // Đăng nhập
+  login: async (data: LoginRequest): Promise<AuthResponse> => {
     try {
-      await fetcher.post(API_ENDPOINTS.AUTH.LOGOUT);
+      const response = await fetcher.post<AuthResponse>(API_ENDPOINTS.AUTH.LOGIN, data);
+      
+      // Lưu token sau khi đăng nhập thành công
+      if (response.accessToken) {
+        fetcher.setAuthToken(response.accessToken); // refreshToken được set qua cookie
+      }
+      
+      return response;
     } catch (error) {
-      // Log error nhưng vẫn clear tokens
-      console.error('Logout error:', error);
-    } finally {
-      fetcher.logout();
+      console.error('Login error:', error);
+      throw error;
     }
   },
 
-  /**
-   * Refresh access token
-   */
-  async refreshToken(refreshToken?: string): Promise<RefreshTokenResponse> {
-    const response = await fetcher.post<RefreshTokenResponse>(
-      API_ENDPOINTS.AUTH.REFRESH,
-      { refreshToken }
-    );
-    
-    // Cập nhật tokens mới
-    fetcher.setAuthToken(response.accessToken, response.refreshToken);
-    
-    return response;
+  // Đăng ký
+  register: async (data: RegisterRequest): Promise<AuthResponse> => {
+    try {
+      const response = await fetcher.post<AuthResponse>(API_ENDPOINTS.AUTH.REGISTER, data);
+      
+      // Lưu token sau khi đăng ký thành công
+      if (response.accessToken) {
+        fetcher.setAuthToken(response.accessToken);
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('Register error:', error);
+      throw error;
+    }
   },
 
-  /**
-   * Lấy thông tin profile người dùng hiện tại
-   */
-  async getProfile(): Promise<User> {
-    return fetcher.get<User>(API_ENDPOINTS.AUTH.PROFILE);
+  // Đăng xuất
+  logout: async (): Promise<{ message: string }> => {
+    try {
+      // Gọi API logout để clear HttpOnly cookie từ server
+      const response = await fetcher.post<{ message: string }>(API_ENDPOINTS.AUTH.LOGOUT);
+      
+      // Clear local access token
+      fetcher.logout();
+      
+      return response;
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Vẫn clear token local dù API call fail
+      fetcher.logout();
+      throw error;
+    }
   },
 
-  /**
-   * Kiểm tra email có khả dụng không
-   */
-  async checkEmailAvailability(email: string): Promise<{ available: boolean }> {
-    return fetcher.get<{ available: boolean }>(
-      `${API_ENDPOINTS.AUTH.CHECK_EMAIL}?email=${encodeURIComponent(email)}`
-    );
+  // Refresh token
+  refreshToken: async (): Promise<RefreshResponse> => {
+    try {
+      return await fetcher.post<RefreshResponse>(API_ENDPOINTS.AUTH.REFRESH);
+    } catch (error) {
+      console.error('Refresh token error:', error);
+      throw error;
+    }
   },
 
-  /**
-   * Kiểm tra username có khả dụng không
-   */
-  async checkUsernameAvailability(username: string): Promise<{ available: boolean }> {
-    return fetcher.get<{ available: boolean }>(
-      `${API_ENDPOINTS.AUTH.CHECK_USERNAME}?username=${encodeURIComponent(username)}`
-    );
+  // Lấy thông tin user hiện tại
+  getMe: async (): Promise<GetMeResponse> => {
+    try {
+      return await fetcher.get<GetMeResponse>(API_ENDPOINTS.AUTH.ME);
+    } catch (error) {
+      console.error('Get me error:', error);
+      throw error;
+    }
   },
 
-  /**
-   * Kiểm tra trạng thái authentication
-   */
-  isAuthenticated(): boolean {
-    return fetcher.isAuthenticated();
+  // Đổi mật khẩu
+  changePassword: async (data: ChangePasswordRequest): Promise<{ message: string }> => {
+    try {
+      return await fetcher.patch<{ message: string }>(API_ENDPOINTS.AUTH.CHANGE_PASSWORD, data);
+    } catch (error) {
+      console.error('Change password error:', error);
+      throw error;
+    }
   },
 
-  /**
-   * Cập nhật thông tin profile
-   */
-  async updateProfile(data: Partial<Pick<User, 'fullName'>>): Promise<User> {
-    return fetcher.patch<User>(API_ENDPOINTS.AUTH.PROFILE, data);
+  // Kiểm tra email có sẵn không
+  checkEmailAvailability: async (email: string): Promise<CheckAvailabilityResponse> => {
+    try {
+      return await fetcher.post<CheckAvailabilityResponse>(API_ENDPOINTS.AUTH.CHECK_EMAIL, { email });
+    } catch (error) {
+      console.error('Check email availability error:', error);
+      throw error;
+    }
   },
 
-  /**
-   * Đổi mật khẩu
-   */
-  async changePassword(data: {
-    currentPassword: string;
-    newPassword: string;
-  }): Promise<{ message: string }> {
-    return fetcher.patch<{ message: string }>(
-      API_ENDPOINTS.AUTH.CHANGE_PASSWORD,
-      data
-    );
+  // Kiểm tra username có sẵn không
+  checkUsernameAvailability: async (username: string): Promise<CheckAvailabilityResponse> => {
+    try {
+      return await fetcher.post<CheckAvailabilityResponse>(API_ENDPOINTS.AUTH.CHECK_USERNAME, { username });
+    } catch (error) {
+      console.error('Check username availability error:', error);
+      throw error;
+    }
   },
 };
 
-// Export default
+// Export individual functions for convenience
+export const {
+  login,
+  register,
+  logout,
+  refreshToken,
+  changePassword,
+  getMe,
+  checkEmailAvailability,
+  checkUsernameAvailability,
+} = authApi;
+
 export default authApi;

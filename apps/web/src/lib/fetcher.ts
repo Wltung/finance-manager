@@ -25,11 +25,12 @@ class Fetcher {
   private baseURL: string;
 
   constructor() {
-    this.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
+    this.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
     
     this.axiosInstance = axios.create({
       baseURL: this.baseURL,
       timeout: 10000,
+      withCredentials: true,
       headers: {
         'Content-Type': 'application/json',
       },
@@ -66,19 +67,21 @@ class Fetcher {
           originalRequest._retry = true;
 
           try {
-            const refreshToken = this.getRefreshToken();
-            if (refreshToken) {
-              const newTokens = await this.refreshAccessToken(refreshToken);
-              this.setTokens(newTokens.accessToken, newTokens.refreshToken);
-              
-              // Retry request với token mới
-              originalRequest.headers.Authorization = `Bearer ${newTokens.accessToken}`;
-              return this.axiosInstance(originalRequest);
-            }
+            // Gọi refresh endpoint (refresh token được gửi qua cookie)
+            const newTokens = await this.refreshAccessToken();
+            
+            // Chỉ lưu access token vào localStorage
+            this.setAccessToken(newTokens.accessToken);
+            
+            // Retry request với token mới
+            originalRequest.headers.Authorization = `Bearer ${newTokens.accessToken}`;
+            return this.axiosInstance(originalRequest);
           } catch (refreshError) {
             // Refresh token cũng hết hạn, redirect to login
             this.clearTokens();
-            window.location.href = '/auth/login';
+            if (typeof window !== 'undefined') {
+              window.location.href = '/auth/login';
+            }
             return Promise.reject(refreshError);
           }
         }
@@ -129,30 +132,21 @@ class Fetcher {
     return null;
   }
 
-  private getRefreshToken(): string | null {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('refreshToken');
-    }
-    return null;
-  }
-
-  private setTokens(accessToken: string, refreshToken: string): void {
+  private setAccessToken(accessToken: string): void {
     if (typeof window !== 'undefined') {
       localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('refreshToken', refreshToken);
     }
   }
 
   private clearTokens(): void {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
     }
   }
 
-  private async refreshAccessToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
-    const response = await axios.post(`${this.baseURL}/auth/refresh`, {
-      refreshToken,
+  private async refreshAccessToken(): Promise<{ accessToken: string }> {
+    const response = await axios.post(`${this.baseURL}/auth/refresh`, {}, {
+      withCredentials: true, // Gửi cookie chứa refresh token
     });
     return response.data;
   }
@@ -194,8 +188,8 @@ class Fetcher {
   }
 
   // Method để set token manually (sau khi login)
-  setAuthToken(accessToken: string, refreshToken: string): void {
-    this.setTokens(accessToken, refreshToken);
+  setAuthToken(accessToken: string): void {
+    this.setAccessToken(accessToken);
   }
 
   // Method để logout
@@ -206,6 +200,17 @@ class Fetcher {
   // Method để check authentication status
   isAuthenticated(): boolean {
     return !!this.getAccessToken();
+  }
+
+  // Method để gọi logout API (để clear cookie từ server)
+  async logoutFromServer(): Promise<void> {
+    try {
+      await this.axiosInstance.post('/auth/logout');
+    } catch (error) {
+      console.error('Logout from server failed:', error);
+    } finally {
+      this.clearTokens();
+    }
   }
 }
 
