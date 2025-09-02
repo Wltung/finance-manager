@@ -14,6 +14,8 @@ import {
 } from 'react-icons/io';
 import avatar from '/public/img/avatars/avatar4.png';
 import Image from 'next/image';
+import { useAuth } from '@/hooks/useAuth';
+import toast from 'react-hot-toast';
 
 const Navbar = (props: {
   onOpenSidenav: () => void;
@@ -25,6 +27,22 @@ const Navbar = (props: {
   const [darkmode, setDarkmode] = React.useState(
     document.body.classList.contains('dark'),
   );
+  
+  const { logout } = useAuth();
+
+  // Handle logout
+  const handleLogout = async (e: React.MouseEvent) => {
+    e.preventDefault();
+
+    try {
+      await logout();
+      toast.success('Đăng xuất thành công!');
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error('Đăng xuất thất bại!');
+    }
+  };
+
   return (
     <nav className="sticky top-4 z-40 flex flex-row flex-wrap items-center justify-between rounded-xl bg-white/10 p-2 backdrop-blur-xl dark:bg-[#0b14374d]">
       <div className="ml-[6px]">
@@ -219,7 +237,8 @@ const Navbar = (props: {
                 Newsletter Settings
               </a>
               <a
-                href=" "
+                href="#"
+                onClick={handleLogout}
                 className="mt-3 text-sm font-medium text-red-500 hover:text-red-500"
               >
                 Log Out

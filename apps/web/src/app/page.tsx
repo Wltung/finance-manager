@@ -1,4 +1,21 @@
-import { redirect } from 'next/navigation';
+'use client';
+
+import { useAuth } from '@/hooks/useAuth';
+import { redirect, useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 export default function Home({}) {
-  redirect('/admin/default');
+  const { isAuthenticated, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading) {
+      if (isAuthenticated) {
+        router.replace('/admin/default');
+      } else {
+        router.replace('/auth/sign-in');
+      }
+    }
+  }, [isAuthenticated, isLoading, router]);
+
+  return null;
 }

@@ -5,10 +5,12 @@ function InputField(props: {
   extra?: string;
   placeholder: string;
   variant?: string;
-  state?: string;
+  state?: 'error' | 'success';
   disabled?: boolean;
   type?: string;
-  onChange?: any;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  value?: string;
+  error?: string;
 }) {
   const {
     label,
@@ -17,10 +19,14 @@ function InputField(props: {
     type,
     placeholder,
     variant,
-    state,
+    state: propState,
     disabled,
     onChange,
+    value,
+    error,
   } = props;
+
+  const state = error ? 'error' : propState;
 
   return (
     <div className={`${extra}`}>
@@ -37,7 +43,9 @@ function InputField(props: {
         disabled={disabled}
         type={type}
         id={id}
+        name={id}
         placeholder={placeholder}
+        value={value}
         className={`mt-2 flex h-12 w-full items-center justify-center rounded-xl border bg-white/0 p-3 text-sm outline-none ${
           disabled === true
             ? "!border-none !bg-gray-100 dark:!bg-white/5 dark:placeholder:!text-[rgba(255,255,255,0.15)]"
@@ -48,6 +56,11 @@ function InputField(props: {
             : "border-gray-200 dark:!border-white/10 dark:text-white"
         }`}
       />
+      {error && (
+        <p className="ml-1.5 mt-1 text-sm text-red-500 dark:text-red-400">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

@@ -1,6 +1,8 @@
 const Checkbox = (props: {
   id?: string;
   extra?: string;
+  checked?: boolean;
+  onChange?: (check: boolean) => void;
   color?:
     | "red"
     | "blue"
@@ -18,11 +20,20 @@ const Checkbox = (props: {
     | "gray";
   [x: string]: any;
 }) => {
-  const { extra, color, id, ...rest } = props;
+  const { extra, color, id, checked, onChange, ...rest } = props;
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (onchange) {
+      onChange(e.target.checked);
+    }
+  };
+
   return (
     <input
       id={id}
       type="checkbox"
+      checked={checked}
+      onChange={handleChange}
       className={`defaultCheckbox relative flex h-[20px] min-h-[20px] w-[20px] min-w-[20px] appearance-none items-center 
       justify-center rounded-md border border-gray-300 text-white/0 outline-none transition duration-[0.2s]
       checked:border-none checked:text-white hover:cursor-pointer dark:border-white/10 ${

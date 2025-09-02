@@ -30,16 +30,19 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
 
   // Check if user is authenticated
-  const isAuthenticated = !!user && fetcher.isAuthenticated();
+  const isAuthenticated = !!user && isMounted && fetcher.isAuthenticated();
 
   // Initialize auth state
   useEffect(() => {
+    setIsMounted(true);
+
     const initializeAuth = async () => {
       try {
         // Kiểm tra nếu có access token trong localStorage
-        if (fetcher.isAuthenticated()) {
+        if (typeof window !== 'undefined' && fetcher.isAuthenticated()) {
           // Lấy thông tin user từ server
           const response = await authApi.getMe();
           setUser(response.user);
@@ -47,15 +50,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
       } catch (error) {
         console.error('Failed to initialize auth:', error);
         // Nếu token không hợp lệ, clear nó
-        fetcher.logout();
+        if (typeof window!== 'undefined') {
+          fetcher.logout();
+        }
         setUser(null);
       } finally {
         setIsLoading(false);
       }
     };
 
-    initializeAuth();
-  }, []);
+    if (isMounted) {
+      initializeAuth();
+    }
+  }, [isMounted]);
 
   // Login function
   const login = useCallback(async (data: LoginRequest) => {
@@ -97,13 +104,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Vẫn clear state local dù API call fail
     } finally {
       setUser(null);
-      fetcher.logout(); // Clear local tokens
-      setIsLoading(false);
-      
-      // Redirect to login page
-      if (typeof window !== 'undefined') {
-        window.location.href = '/auth/login';
+      if (typeof window!== 'undefined') {
+        fetcher.logout(); // Clear local tokens
+        window.location.href = '/auth/sign-in';
       }
+      setIsLoading(false);
     }
   }, []);
 
@@ -120,7 +125,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Refresh user data
   const refreshUser = useCallback(async () => {
     try {
-      if (fetcher.isAuthenticated()) {
+      if (typeof window !== 'undefined' && fetcher.isAuthenticated()) {
         const response = await authApi.getMe();
         setUser(response.user);
       }
@@ -128,7 +133,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.error('Failed to refresh user:', error);
       // Nếu không thể refresh, có thể token đã hết hạn
       setUser(null);
-      fetcher.logout();
+      if (typeof window!== 'undefined') {
+        fetcher.logout();
+      }
       throw error;
     }
   }, []);
