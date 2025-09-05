@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { authApi, type User, type LoginRequest, type RegisterRequest, type ChangePasswordRequest } from '@/lib/api/auth';
+import { authApi, type User, type LoginRequest, type RegisterRequest, type ChangePasswordRequest, ForgotPasswordRequest, ResetPasswordRequest } from '@/lib/api/auth';
 import fetcher from '@/lib/fetcher';
 
 // Auth context types
@@ -13,18 +13,29 @@ interface AuthContextType {
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => Promise<void>;
   changePassword: (data: ChangePasswordRequest) => Promise<void>;
+  forgotPassword: (data: ForgotPasswordRequest) => Promise<void>;
+  resetPassword: (data: ResetPasswordRequest) => Promise<void>;
   refreshUser: () => Promise<void>;
   checkEmailAvailability: (email: string) => Promise<boolean>;
   checkUsernameAvailability: (username: string) => Promise<boolean>;
 }
 
-// Create auth context
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
 // Auth provider props
 interface AuthProviderProps {
   children: ReactNode;
 }
+
+// Create auth context
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Custom hook to use auth context
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
 
 // Auth provider component
 export function AuthProvider({ children }: AuthProviderProps) {
@@ -71,7 +82,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const response = await authApi.login(data);
       setUser(response.user);
     } catch (error) {
-      console.error('Login failed:', error);
       setUser(null);
       throw error;
     } finally {
@@ -86,7 +96,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const response = await authApi.register(data);
       setUser(response.user);
     } catch (error) {
-      console.error('Register failed:', error);
       setUser(null);
       throw error;
     } finally {
@@ -118,6 +127,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
       await authApi.changePassword(data);
     } catch (error) {
       console.error('Change password failed:', error);
+      throw error;
+    }
+  }, []);
+
+  // Forgot password function
+  const forgotPassword = useCallback(async (data: ForgotPasswordRequest) => {
+    try {
+      await authApi.forgotPassword(data);
+    } catch (error) {
+      console.error('Forgot password failed:', error);
+      throw error;
+    }
+  }, []);
+
+  // Reset password function
+  const resetPassword = useCallback(async (data: ResetPasswordRequest) => {
+    try {
+      await authApi.resetPassword(data);
+    } catch (error) {
+      console.error('Reset password failed:', error);
       throw error;
     }
   }, []);
@@ -170,6 +199,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     register,
     logout,
     changePassword,
+    forgotPassword,
+    resetPassword,
     refreshUser,
     checkEmailAvailability,
     checkUsernameAvailability,
@@ -184,4 +215,4 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
 // Export context and types
 export { AuthContext };
-export type { AuthContextType, User, LoginRequest, RegisterRequest, ChangePasswordRequest };
+export type { AuthContextType, User, LoginRequest, RegisterRequest, ChangePasswordRequest, ForgotPasswordRequest, ResetPasswordRequest };

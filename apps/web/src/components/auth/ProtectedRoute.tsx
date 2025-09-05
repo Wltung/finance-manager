@@ -28,15 +28,6 @@ export default function ProtectedRoute({
     }
   }, [isAuthenticated, isLoading, requireAuth, router]);
 
-  // Hiển thị loading khi đang kiểm tra
-  if (isLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500"></div>
-      </div>
-    );
-  }
-
   // Không hiển thị gì nếu đang redirect
   if (requireAuth && !isAuthenticated) return null;
   if (!requireAuth && isAuthenticated) return null;

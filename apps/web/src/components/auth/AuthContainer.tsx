@@ -1,0 +1,25 @@
+import React from 'react';
+
+interface AuthContainerProps {
+  title: string;
+  subtitle: string;
+  children: React.ReactNode;
+}
+
+const AuthContainer: React.FC<AuthContainerProps> = ({ title, subtitle, children }) => {
+  return (
+    <div className="mb-16 mt-16 flex h-full w-full items-center justify-center px-2 md:mx-0 md:px-0 lg:mb-10 lg:items-center lg:justify-start">
+      <div className="mt-[10vh] w-full max-w-full flex-col items-center md:pl-4 lg:pl-0 xl:max-w-[420px]">
+        <h3 className="mb-2.5 text-4xl font-bold text-navy-700 dark:text-white">
+          {title}
+        </h3>
+        <p className="mb-9 ml-1 text-base text-gray-600">
+          {subtitle}
+        </p>
+        {children}
+      </div>
+    </div>
+  );
+};
+
+export default AuthContainer;

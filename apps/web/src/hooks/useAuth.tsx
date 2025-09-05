@@ -76,6 +76,24 @@ export function useLogout() {
   return { logout, isLoading };
 }
 
+// Hook for password management
+export function usePasswordManagement() {
+  const { changePassword, forgotPassword, resetPassword } = useAuth();
+  return { changePassword, forgotPassword, resetPassword };
+}
+
+// Hook for forgot password functionality
+export function useForgotPassword() {
+  const { forgotPassword } = useAuth();
+  return { forgotPassword };
+}
+
+// Hook for reset password functionality
+export function useResetPassword() {
+  const { resetPassword } = useAuth();
+  return { resetPassword };
+}
+
 // Hook for user management
 export function useUser() {
   const { user, refreshUser, isLoading } = useAuth();

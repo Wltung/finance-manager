@@ -17,6 +17,7 @@ interface ApiError {
 declare module 'axios' {
     export interface AxiosRequestConfig {
         _retry?: boolean;
+        _skipAuthRedirect?: boolean;
     }
 }
 
@@ -62,28 +63,40 @@ class Fetcher {
       async (error) => {
         const originalRequest = error.config;
 
-        // Xử lý lỗi 401 (Unauthorized) - token hết hạn
-        if (error.response?.status === 401 && !originalRequest._retry) {
-          originalRequest._retry = true;
-
-          try {
-            // Gọi refresh endpoint (refresh token được gửi qua cookie)
-            const newTokens = await this.refreshAccessToken();
-            
-            // Chỉ lưu access token vào localStorage
-            this.setAccessToken(newTokens.accessToken);
-            
-            // Retry request với token mới
-            originalRequest.headers.Authorization = `Bearer ${newTokens.accessToken}`;
-            return this.axiosInstance(originalRequest);
-          } catch (refreshError) {
-            // Refresh token cũng hết hạn, redirect to login
-            this.clearTokens();
-            if (typeof window !== 'undefined') {
-              window.location.href = '/auth/login';
-            }
-            return Promise.reject(refreshError);
+        // Xử lý lỗi 401 (Unauthorized)
+        if (error.response?.status === 401) {
+          // Nếu request có flag _skipAuthRedirect, không tự động redirect
+          if (originalRequest._skipAuthRedirect) {
+            return Promise.reject(this.handleError(error));
           }
+
+          // Nếu đã có token và chưa retry, thử refresh token
+          if (this.getAccessToken() && !originalRequest._retry) {
+            originalRequest._retry = true;
+
+            try {
+              // Gọi refresh endpoint (refresh token được gửi qua cookie)
+              const newTokens = await this.refreshAccessToken();
+              
+              // Chỉ lưu access token vào localStorage
+              this.setAccessToken(newTokens.accessToken);
+              
+              // Retry request với token mới
+              originalRequest.headers.Authorization = `Bearer ${newTokens.accessToken}`;
+              return this.axiosInstance(originalRequest);
+            } catch (refreshError) {
+              // Refresh token cũng hết hạn, redirect to login
+              this.clearTokens();
+              if (typeof window !== 'undefined') {
+                window.location.href = '/auth/sign-in';
+              }
+              return Promise.reject(refreshError);
+            }
+          }
+
+          // Nếu không có token hoặc đã retry rồi, chỉ reject error mà không redirect
+          // (để component tự xử lý hiển thị lỗi)
+          return Promise.reject(this.handleError(error));
         }
 
         return Promise.reject(this.handleError(error));
@@ -174,6 +187,16 @@ class Fetcher {
 
   async delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.axiosInstance.delete(url, config);
+    return this.extractData<T>(response);
+  }
+
+  // Special methods for auth endpoints (skip auto redirect)
+  async postAuth<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+    const authConfig = {
+      ...config,
+      _skipAuthRedirect: true, // Skip auto redirect cho auth endpoints
+    };
+    const response = await this.axiosInstance.post(url, data, authConfig);
     return this.extractData<T>(response);
   }
 

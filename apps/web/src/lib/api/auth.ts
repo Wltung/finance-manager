@@ -19,6 +19,40 @@ export interface ChangePasswordRequest {
   newPassword: string;
 }
 
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  newPassword: string;
+}
+
+export interface AuthResponse {
+  accessToken: string;
+  refreshToken: string;
+  user: User;
+  message: string;
+}
+
+export interface RefreshResponse {
+  accessToken: string;
+  message: string;
+}
+
+export interface GetMeResponse {
+  user: User;
+  message: string;
+}
+
+export interface ForgotPasswordResponse {
+  message: string;
+}
+
+export interface ResetPasswordResponse {
+  message: string;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -28,41 +62,23 @@ export interface User {
   updatedAt: string;
 }
 
-export interface AuthResponse {
-  accessToken: string;
-  user: User;
-  message: string;
-}
-
-export interface RefreshResponse {
-  accessToken: string;
-}
-
 export interface CheckAvailabilityResponse {
   available: boolean;
-}
-
-export interface GetMeResponse {
-  user: User;
+  message: string;
 }
 
 // Auth API functions
 export const authApi = {
   // Đăng nhập
   login: async (data: LoginRequest): Promise<AuthResponse> => {
-    try {
-      const response = await fetcher.post<AuthResponse>(API_ENDPOINTS.AUTH.LOGIN, data);
-      
-      // Lưu token sau khi đăng nhập thành công
-      if (response.accessToken) {
-        fetcher.setAuthToken(response.accessToken); // refreshToken được set qua cookie
-      }
-      
-      return response;
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error;
+    const response = await fetcher.post<AuthResponse>(API_ENDPOINTS.AUTH.LOGIN, data);
+    
+    // Lưu token sau khi đăng nhập thành công
+    if (response.accessToken) {
+      fetcher.setAuthToken(response.accessToken); // refreshToken được set qua cookie
     }
+    
+    return response;
   },
 
   // Đăng ký
@@ -77,7 +93,6 @@ export const authApi = {
       
       return response;
     } catch (error) {
-      console.error('Register error:', error);
       throw error;
     }
   },
@@ -130,6 +145,26 @@ export const authApi = {
     }
   },
 
+  // Quên mật khẩu
+  forgotPassword: async (data: ForgotPasswordRequest): Promise<ForgotPasswordResponse> => {
+    try {
+      return await fetcher.post<ForgotPasswordResponse>(API_ENDPOINTS.AUTH.FORGOT_PASSWORD, data);
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      throw error;
+    }
+  },
+
+  // Đặt lại mật khẩu
+  resetPassword: async (data: ResetPasswordRequest): Promise<ResetPasswordResponse> => {
+    try {
+      return await fetcher.post<ResetPasswordResponse>(API_ENDPOINTS.AUTH.RESET_PASSWORD, data);
+    } catch (error) {
+      console.error('Reset password error:', error);
+      throw error;
+    }
+  },
+
   // Kiểm tra email có sẵn không
   checkEmailAvailability: async (email: string): Promise<CheckAvailabilityResponse> => {
     try {
@@ -158,6 +193,8 @@ export const {
   logout,
   refreshToken,
   changePassword,
+  forgotPassword,
+  resetPassword,
   getMe,
   checkEmailAvailability,
   checkUsernameAvailability,

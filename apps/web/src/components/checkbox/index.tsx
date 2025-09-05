@@ -23,7 +23,7 @@ const Checkbox = (props: {
   const { extra, color, id, checked, onChange, ...rest } = props;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (onchange) {
+    if (onChange) {
       onChange(e.target.checked);
     }
   };
