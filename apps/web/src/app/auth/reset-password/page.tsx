@@ -9,6 +9,7 @@ import AuthLink from '@/components/auth/AuthLink';
 import Default from '@/components/auth/variants/DefaultAuthLayout';
 import { useAuthForm } from '@/hooks/useAuthForm';
 import AuthForm, { FormField } from '@/components/auth/AuthForm';
+import authApi from '@/lib/api/auth';
 
 function ResetPasswordDefault() {
   const router = useRouter();
@@ -16,17 +17,49 @@ function ResetPasswordDefault() {
   const { resetPassword, isLoading: authLoading, isAuthenticated } = useAuth();
   const [isPasswordReset, setIsPasswordReset] = useState(false);
   const [token, setToken] = useState<string | null>(null);
+  const [isValidatingToken, setIsValidatingToken] = useState(true);
+  const [tokenValidationError, setTokenValidationError] = useState<string | null>(null);
 
-  // Get token from URL params
+  // Validate token when component mounts
   useEffect(() => {
-    const tokenParam = searchParams.get('token');
-    if (!tokenParam) {
-      toast.error('Token không hợp lệ hoặc đã hết hạn');
-      router.replace('/auth/forgot-password');
-      return;
+    const validateToken = async () => {
+      const tokenParam = searchParams.get('token');
+      
+      if (!tokenParam) {
+        setTokenValidationError('Token không hợp lệ hoặc đã hết hạn');
+        setIsValidatingToken(false);
+        return;
+      }
+
+      try {
+        const result = await authApi.validateResetToken(tokenParam);
+        
+        if (result.valid) {
+          setToken(tokenParam);
+          setTokenValidationError(null);
+        } else {
+          setTokenValidationError(result.message || 'Token không hợp lệ');
+        }
+      } catch (error: any) {
+        console.error('Token validation error:', error);
+        setTokenValidationError('Có lỗi xảy ra khi kiểm tra token');
+      } finally {
+        setIsValidatingToken(false);
+      }
+    };
+
+    validateToken();
+  }, [searchParams]);
+
+  // Redirect to forgot password if token is invalid
+  useEffect(() => {
+    if (!isValidatingToken && tokenValidationError) {
+      toast.error(tokenValidationError);
+      setTimeout(() => {
+        router.replace('/auth/forgot-password');
+      }, 2000);
     }
-    setToken(tokenParam);
-  }, [searchParams, router]);
+  }, [isValidatingToken, tokenValidationError, router]);
 
   // Form configuration
   const initialValues = {
@@ -86,8 +119,14 @@ function ResetPasswordDefault() {
       }
       
       // Handle specific error cases
-      if (errorMessage.includes('token') || errorMessage.includes('expired')) {
-        toast.error('Token đã hết hạn hoặc không hợp lệ. Vui lòng yêu cầu đặt lại mật khẩu mới.');
+      if (
+        errorMessage.includes('token') || 
+        errorMessage.includes('expired') ||
+        errorMessage.includes('hết hạn') ||
+        errorMessage.includes('đã được sử dụng') ||
+        errorMessage.includes('không hợp lệ')
+      ) {
+        toast.error(errorMessage);
         setTimeout(() => {
           router.replace('/auth/forgot-password');
         }, 2000);
@@ -121,6 +160,62 @@ function ResetPasswordDefault() {
   const handleGoToLogin = useCallback(() => {
     router.push('/auth/sign-in');
   }, [router]);
+
+  // Show loading while validating token
+  if (isValidatingToken) {
+    return (
+      <Default
+        maincard={
+          <AuthContainer
+            title="Reset Password"
+            subtitle="Validating reset token..."
+          >
+            <div className="flex justify-center py-8">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-500 border-t-transparent"></div>
+            </div>
+          </AuthContainer>
+        }
+      />
+    );
+  }
+
+  // Show error if token validation failed (sẽ tự động redirect)
+  if (tokenValidationError) {
+    return (
+      <Default
+        maincard={
+          <AuthContainer
+            title="Invalid Token"
+            subtitle="The reset token is invalid or has expired."
+          >
+            <div className="mb-6 text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900">
+                <svg
+                  className="h-8 w-8 text-red-600 dark:text-red-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {tokenValidationError}
+              </p>
+              <p className="mt-2 text-xs text-gray-500 dark:text-gray-500">
+                Redirecting to forgot password page...
+              </p>
+            </div>
+          </AuthContainer>
+        }
+      />
+    );
+  }
 
   // Show loading if no token yet
   if (!token) {

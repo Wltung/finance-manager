@@ -11,6 +11,7 @@ import AuthDivider from '@/components/auth/AuthDivider';
 import AuthLink from '@/components/auth/AuthLink';
 import AuthForm, { FormField } from '@/components/auth/AuthForm';
 import { useAuthForm } from '@/hooks/useAuthForm';
+import Checkbox from '@/components/checkbox';
 
 function SignInDefault() {
   const router = useRouter();
@@ -42,11 +43,6 @@ function SignInDefault() {
       type: 'password',
       placeholder: 'Min. 6 characters',
       required: true,
-    },
-    {
-      name:'rememberMe',
-      label: 'Keep me logged In',
-      type: 'checkbox',
     },
   ];
 
@@ -124,7 +120,19 @@ function SignInDefault() {
             onSubmit={handleSubmit}
             extraContent={
               <div className="mb-4 flex items-center justify-between px-2">
-                <div /> {/* Empty div for spacing since checkbox is in form fields */}
+                {/* Keep me logged in checkbox */}
+                <div className="flex items-center">
+                  <Checkbox
+                    id="rememberMe"
+                    checked={formData.rememberMe || false}
+                    onChange={(checked) => handleInputChange('rememberMe', checked)}
+                  />
+                  <p className="ml-2 text-sm font-medium text-navy-700 dark:text-white">
+                    Keep me logged In
+                  </p>
+                </div>
+                
+                {/* Forgot password link */}
                   <a
                     className="text-sm font-medium text-brand-500 hover:text-brand-600 dark:text-white"
                     href="/auth/forgot-password"

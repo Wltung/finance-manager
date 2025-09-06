@@ -32,7 +32,7 @@ function SignUpDefault(){
         username: { required: true, username: true, minLength: 3 },
         email: { required: true, email: true },
         password: { required: true, password: true, minLength: 6 },
-        confirmPassword: { required: true, confirmPassword: 'password', minLength: 6 },
+        confirmPassword: { required: true, confirmPassword: 'password' },
         agreeToTerms: { required: true },
     };
 

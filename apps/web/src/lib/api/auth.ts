@@ -165,6 +165,18 @@ export const authApi = {
     }
   },
 
+  validateResetToken: async (token: string): Promise<{ valid: boolean; message?: string }> => {
+    try {
+      return await fetcher.post<{ valid: boolean; message?: string }>(
+        API_ENDPOINTS.AUTH.VALIDATE_RESET_TOKEN, 
+        { token }
+      );
+    } catch (error) {
+      console.error('Validate reset token error:', error);
+      throw error;
+    }
+  },
+
   // Kiểm tra email có sẵn không
   checkEmailAvailability: async (email: string): Promise<CheckAvailabilityResponse> => {
     try {
