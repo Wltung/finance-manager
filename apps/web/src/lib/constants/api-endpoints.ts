@@ -34,10 +34,9 @@ export const API_ENDPOINTS = {
     
     // User endpoints
     USERS: {
-      BASE: '/users',
+      BASE: '/user',
       BY_ID: (id: string) => `/users/${id}`,
-      PROFILE: '/users/profile',
-      SETTINGS: '/users/settings',
+      UPDATE: (id: string) => `/user/${id}`,
     },
   
     // Category endpoints (nếu có)

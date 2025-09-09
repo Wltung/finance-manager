@@ -1,4 +1,6 @@
 'use client';
+import AccountSettings from '@/components/admin/profile/AccountSettings';
+import ChangePassword from '@/components/admin/profile/ChangePassword';
 import Banner from 'components/admin/profile/Banner';
 import General from 'components/admin/profile/General';
 import Notification from 'components/admin/profile/Notification';
@@ -10,16 +12,16 @@ const ProfileOverview = () => {
   return (
     <div className="flex w-full flex-col gap-5 lg:gap-5">
       <div className="w-ful mt-3 flex h-fit flex-col gap-5 lg:grid lg:grid-cols-12">
-        <div className="col-span-4 lg:!mb-0">
+        <div className="col-span-12 lg:!mb-0">
           <Banner />
         </div>
 
-        <div className="col-span-3 lg:!mb-0">
-          <Storage />
+        <div className="col-span-12 lg:col-span-7 lg:!mb-0">
+          <AccountSettings />
         </div>
 
-        <div className="z-0 col-span-5 lg:!mb-0">
-          <Upload />
+        <div className="z-0 col-span-12 lg:col-span-5 lg:!mb-0">
+          <ChangePassword />
         </div>
       </div>
       {/* all project & ... */}

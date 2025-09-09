@@ -4,18 +4,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { redirect, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 export default function Home({}) {
-  const { isAuthenticated, isLoading } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isLoading) {
-      if (isAuthenticated) {
-        router.replace('/admin/default');
-      } else {
-        router.replace('/auth/sign-in');
-      }
-    }
-  }, [isAuthenticated, isLoading, router]);
-
-  return null;
+  return (
+    <div className="flex h-screen items-center justify-center">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-500 border-t-transparent"></div>
+    </div>
+  );
 }

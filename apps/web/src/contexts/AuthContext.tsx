@@ -3,12 +3,14 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { authApi, type User, type LoginRequest, type RegisterRequest, type ChangePasswordRequest, ForgotPasswordRequest, ResetPasswordRequest } from '@/lib/api/auth';
 import fetcher from '@/lib/fetcher';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 // Auth context types
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  isInitialized: boolean;
   login: (data: LoginRequest) => Promise<void>;
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => Promise<void>;
@@ -18,6 +20,9 @@ interface AuthContextType {
   refreshUser: () => Promise<void>;
   checkEmailAvailability: (email: string) => Promise<boolean>;
   checkUsernameAvailability: (username: string) => Promise<boolean>;
+  hasRole: (role: string) => boolean;
+  hasAnyRole: (roles: string[]) => boolean;
+  hasAllRoles: (roles: string[]) => boolean;
 }
 
 // Auth provider props
@@ -40,11 +45,30 @@ export const useAuth = () => {
 // Auth provider component
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Check if user is authenticated
   const isAuthenticated = !!user && isMounted && fetcher.isAuthenticated();
+
+  // Role helper functions
+  const hasRole = useCallback((role: string): boolean => {
+    if (!user?.roles) return false;
+    return user.roles.includes(role);
+  }, [user]);
+
+  const hasAnyRole = useCallback((roles: string[]): boolean => {
+    if (!user?.roles) return false;
+    return roles.some(role => user.roles!.includes(role));
+  }, [user]);
+
+  const hasAllRoles = useCallback((roles: string[]): boolean => {
+    if (!user?.roles) return false;
+    return roles.every(role => user.roles!.includes(role));
+  }, [user]);
 
   // Initialize auth state
   useEffect(() => {
@@ -67,6 +91,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setUser(null);
       } finally {
         setIsLoading(false);
+        setIsInitialized(true);
       }
     };
 
@@ -74,6 +99,38 @@ export function AuthProvider({ children }: AuthProviderProps) {
       initializeAuth();
     }
   }, [isMounted]);
+
+  // Handle redirect after authentication state is initialized
+  useEffect(() => {
+    if (!isInitialized || isLoading) return;
+
+    const currentPath = window.location.pathname;
+    const redirectParam = searchParams.get('redirect');
+
+    // Nếu đã đăng nhập và đang ở trang auth
+    if (isAuthenticated && currentPath.startsWith('/auth/')) {
+      const redirectTo = redirectParam || '/admin/default';
+      router.replace(redirectTo);
+      return;
+    }
+
+    // Nếu chưa đăng nhập và đang ở protected route
+    const protectedRoutes = ['/admin', '/dashboard', '/account', '/wallet'];
+    if (!isAuthenticated && protectedRoutes.some(route => currentPath.startsWith(route))) {
+      const signInUrl = `/auth/sign-in${currentPath !== '/' ? `?redirect=${encodeURIComponent(currentPath)}` : ''}`;
+      router.replace(signInUrl);
+      return;
+    }
+
+    // Redirect root path
+    if (currentPath === '/') {
+      if (isAuthenticated) {
+        router.replace('/admin/default');
+      } else {
+        router.replace('/auth/sign-in');
+      }
+    }
+  }, [isAuthenticated, isInitialized, isLoading, router, searchParams]);
 
   // Login function
   const login = useCallback(async (data: LoginRequest) => {
@@ -124,30 +181,39 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Change password function
   const changePassword = useCallback(async (data: ChangePasswordRequest) => {
     try {
+      setIsLoading(true);
       await authApi.changePassword(data);
     } catch (error) {
       console.error('Change password failed:', error);
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
   // Forgot password function
   const forgotPassword = useCallback(async (data: ForgotPasswordRequest) => {
     try {
+      setIsLoading(true);
       await authApi.forgotPassword(data);
     } catch (error) {
       console.error('Forgot password failed:', error);
       throw error;
+    }  finally {
+      setIsLoading(false);
     }
   }, []);
 
   // Reset password function
   const resetPassword = useCallback(async (data: ResetPasswordRequest) => {
     try {
+      setIsLoading(true);
       await authApi.resetPassword(data);
     } catch (error) {
       console.error('Reset password failed:', error);
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
@@ -155,6 +221,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const refreshUser = useCallback(async () => {
     try {
       if (typeof window !== 'undefined' && fetcher.isAuthenticated()) {
+        setIsLoading(true);
         const response = await authApi.getMe();
         setUser(response.user);
       }
@@ -166,6 +233,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         fetcher.logout();
       }
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
@@ -195,6 +264,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     user,
     isLoading,
     isAuthenticated,
+    isInitialized,
     login,
     register,
     logout,
@@ -204,6 +274,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     refreshUser,
     checkEmailAvailability,
     checkUsernameAvailability,
+    hasRole,
+    hasAnyRole,
+    hasAllRoles,
   };
 
   return (

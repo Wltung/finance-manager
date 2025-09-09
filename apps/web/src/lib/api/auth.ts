@@ -53,13 +53,20 @@ export interface ResetPasswordResponse {
   message: string;
 }
 
+export interface ValidateResetTokenResponse {
+  valid: boolean;
+  message?: string;
+}
+
 export interface User {
   id: string;
   email: string;
   username: string;
   fullName?: string;
+  roles?: string[];
   createdAt: string;
   updatedAt: string;
+  deletedAt?: string | null;
 }
 
 export interface CheckAvailabilityResponse {
@@ -71,14 +78,18 @@ export interface CheckAvailabilityResponse {
 export const authApi = {
   // Đăng nhập
   login: async (data: LoginRequest): Promise<AuthResponse> => {
-    const response = await fetcher.post<AuthResponse>(API_ENDPOINTS.AUTH.LOGIN, data);
-    
-    // Lưu token sau khi đăng nhập thành công
-    if (response.accessToken) {
-      fetcher.setAuthToken(response.accessToken); // refreshToken được set qua cookie
+    try {
+      const response = await fetcher.post<AuthResponse>(API_ENDPOINTS.AUTH.LOGIN, data);
+      
+      // Lưu token sau khi đăng nhập thành công
+      if (response.accessToken) {
+        fetcher.setAuthToken(response.accessToken); // refreshToken được set qua cookie
+      }
+      
+      return response;
+    } catch (error) {
+      throw error;
     }
-    
-    return response;
   },
 
   // Đăng ký
@@ -118,9 +129,18 @@ export const authApi = {
   // Refresh token
   refreshToken: async (): Promise<RefreshResponse> => {
     try {
-      return await fetcher.post<RefreshResponse>(API_ENDPOINTS.AUTH.REFRESH);
+      const response = await fetcher.post<RefreshResponse>(API_ENDPOINTS.AUTH.REFRESH);
+
+      // Cập nhật token mới nếu có
+      if (response.accessToken) {
+        fetcher.setAuthToken(response.accessToken);
+      }
+      
+      return response;
     } catch (error) {
       console.error('Refresh token error:', error);
+      // Nếu refresh fail, clear tokens
+      fetcher.logout();
       throw error;
     }
   },
@@ -195,6 +215,47 @@ export const authApi = {
       console.error('Check username availability error:', error);
       throw error;
     }
+  },
+
+  // Verify email (nếu cần)
+  verifyEmail: async (token: string): Promise<{ message: string }> => {
+    try {
+      return await fetcher.post<{ message: string }>('/auth/verify-email', { token });
+    } catch (error) {
+      console.error('Verify email error:', error);
+      throw error;
+    }
+  },
+
+  // Resend verification email (nếu cần)
+  resendVerificationEmail: async (): Promise<{ message: string }> => {
+    try {
+      return await fetcher.post<{ message: string }>('/auth/resend-verification');
+    } catch (error) {
+      console.error('Resend verification email error:', error);
+      throw error;
+    }
+  },
+};
+
+// Helper functions for role/permission checking
+export const authHelpers = {
+  // Kiểm tra user có role cụ thể không
+  hasRole: (user: User | null, role: string): boolean => {
+    if (!user?.roles) return false;
+    return user.roles.includes(role);
+  },
+
+  // Kiểm tra user có ít nhất một trong các roles
+  hasAnyRole: (user: User | null, roles: string[]): boolean => {
+    if (!user?.roles) return false;
+    return roles.some(role => user.roles!.includes(role));
+  },
+
+  // Kiểm tra user có tất cả các roles
+  hasAllRoles: (user: User | null, roles: string[]): boolean => {
+    if (!user?.roles) return false;
+    return roles.every(role => user.roles!.includes(role));
   },
 };
 
