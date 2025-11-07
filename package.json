@@ -1,6 +1,13 @@
 {
     "name": "finance-manager",
+    "version": "1.0.0",
+    "description": "A comprehensive finance management application built with Turborepo monorepo structure",
     "private": true,
+    "author": {
+        "name": "Wltung",
+        "email": "dttung123569@gmail.com"
+    },
+    "license": "MIT",
     "scripts": {
         "start:api": "turbo run start --filter=api",
         "start:web": "turbo run start --filter=web",
