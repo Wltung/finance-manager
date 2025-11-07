@@ -2,10 +2,15 @@
     "name": "finance-manager",
     "private": true,
     "scripts": {
+        "start:api": "turbo run start --filter=api",
+        "start:web": "turbo run start --filter=web",
+        "start": "turbo run start",
         "build": "turbo run build",
         "dev": "turbo run dev",
         "dev:api": "turbo run dev --filter=api",
+        "dev:web": "turbo run dev --filter=web",
         "build:api": "turbo run build --filter=api",
+        "build:web": "turbo run build --filter=web",
         "lint": "turbo run lint",
         "format": "prettier --write \"**/*.{ts,tsx,md}\"",
         "check-types": "turbo run check-types"

@@ -1,0 +1,34 @@
+# ===========================
+# 1. Base image: install deps
+# ===========================
+FROM node:20-slim AS deps
+
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    openssl \
+ && rm -rf /var/lib/apt/lists/*
+ 
+# Enable pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Work at root
+WORKDIR /app
+
+# Copy the package.json file and install dependencies
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+COPY apps/api/package.json apps/api/tsconfig.build.json apps/api/tsconfig.json ./apps/api/
+
+# Install dependencies
+RUN pnpm install
+
+# Copy all source code to the container
+COPY . .
+
+# Build the API
+RUN pnpm build:api
+
+# Expose the API port
+EXPOSE 3000
+
+# Start the application
+CMD ["pnpm", "start:api"]
