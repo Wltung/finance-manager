@@ -19,6 +19,8 @@
 # .env* 
 # **/.env 
 # **/.env.local
+# apps/api/.env*
+# apps/web/.env*
 
 # Package manager locks
 **/package-lock.json [cite: 24]
