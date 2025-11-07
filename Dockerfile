@@ -12,6 +12,9 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
 COPY apps ./apps
 COPY packages ./packages
 
+# Copy environment files
+COPY apps/api/.env ./apps/api/
+
 # cài deps cho cả monorepo
 RUN pnpm install --frozen-lockfile
 
@@ -35,11 +38,9 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/apps ./apps
 COPY --from=builder /app/packages ./packages
 COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/pnpm-lock.yaml ./pnpm-lock.yaml
 COPY --from=builder /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
 COPY --from=builder /app/turbo.json ./turbo.json
-
-# Copy environment files
-COPY apps/api/.env ./apps/api/.env
 
 EXPOSE 3000
 EXPOSE 3002
