@@ -48,19 +48,14 @@ A comprehensive **Personal Finance Manager** web application built using a **Mon
 
 ## 🚀 Quick Start
 
-Bạn có thể chạy dự án bằng một trong hai cách sau:
-
-### ✅ Option 1 — Cài đặt Local (Manual Setup)
-
-Chạy các dịch vụ (API, Web) trực tiếp trên máy của bạn.
-
-#### Điều kiện tiên quyết
+### Điều kiện tiên quyết
 
 - **Node.js** (v18+)
 - **pnpm** (v9.0.0+)
-- Một instance **PostgreSQL** đang chạy (trên local hoặc remote)
+- **PostgreSQL** instance đang chạy (local hoặc remote)
+- **Docker & Docker Compose** (tùy chọn, cho Option 2)
 
-#### 1. Cài đặt & Cấu hình
+### Cài đặt & Cấu hình
 
 1.  **Clone dự án:**
     ```bash
@@ -81,7 +76,11 @@ Chạy các dịch vụ (API, Web) trực tiếp trên máy của bạn.
     pnpm --filter api migration:run
     ```
 
-#### 2. Khởi chạy
+Bạn có thể chạy dự án bằng một trong hai cách sau:
+
+### ✅ Option 1 — Cài đặt Local (Manual Setup)
+
+Chạy các dịch vụ (API, Web) trực tiếp trên máy của bạn.
 
 **Cài đặt dependencies:**
 (Chạy từ thư mục gốc)
@@ -93,8 +92,20 @@ pnpm install
 Chạy cả `api` và `web` ở chế độ "watch" (tự động build lại khi có thay đổi).
 ```bash
 pnpm dev
+```
 
 **Chế độ Production (Chạy bản build):**
 ```bash
 pnpm build
+```
+
+```bash
 pnpm start
+```
+
+### ✅ Option 2 — Cài đặt docker
+
+```bash
+docker compose up --build -d
+```
+
