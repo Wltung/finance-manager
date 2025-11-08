@@ -46,65 +46,86 @@ A comprehensive **Personal Finance Manager** web application built using a **Mon
 
 ---
 
+## 📂 Project Structure
+
+This monorepo is managed by Turborepo and contains the following core applications:
+
+---
+
+## 🔑 Environment Variables
+
+The backend (`apps/api`) requires environment variables to run.
+
+First, copy the example file:
+
+```bash
+cp apps/api/.env.example apps/api/.env
+```
+
+---
+
 ## 🚀 Quick Start
 
-### Điều kiện tiên quyết
+### Prerequisites
 
 - **Node.js** (v18+)
 - **pnpm** (v9.0.0+)
-- **PostgreSQL** instance đang chạy (local hoặc remote)
-- **Docker & Docker Compose** (tùy chọn, cho Option 2)
+- **PostgreSQL** instance (running locally or remotely)
+- **Docker & Docker Compose** (optional, for Option 2)
 
-### Cài đặt & Cấu hình
+### Installation & Setup
 
-1.  **Clone dự án:**
+1.  **Clone the repository:**
     ```bash
     git clone [https://github.com/your-username/finance-manager.git](https://github.com/your-username/finance-manager.git)
     cd finance-manager
     ```
 
-2.  **Thiết lập Backend (API):**
-    Sao chép file `.env.example` và cấu hình các biến môi trường, đặc biệt là `DATABASE_URL` và `JWT_SECRET`.
+2.  **Configure Environment:**
+    Copy the backend environment file and fill in your database/JWT details (as described in the section above).
     ```bash
     cp apps/api/.env.example apps/api/.env
     ```
-    *Sau đó, mở file `apps/api/.env` và chỉnh sửa các giá trị.*
 
-3.  **Chạy Database Migration:**
-    Lệnh này sẽ áp dụng schema mới nhất vào database đã cấu hình ở bước 3.
+3.  **Run Database Migrations:**
+    This command applies the latest schema to the database you configured in step 2.
     ```bash
     pnpm --filter api migration:run
     ```
 
-Bạn có thể chạy dự án bằng một trong hai cách sau:
+---
 
-### ✅ Option 1 — Cài đặt Local (Manual Setup)
+## 🚦 Running the Application
 
-Chạy các dịch vụ (API, Web) trực tiếp trên máy của bạn.
+You can run the project in two ways:
 
-**Cài đặt dependencies:**
-(Chạy từ thư mục gốc)
+### ✅ Option 1 — Local Development (Manual)
+
+**Install dependencies:**
+Run from the root directory
 ```bash
 pnpm install
 ```
 
-**Chế độ Development (Khuyên dùng khi lập trình):**
-Chạy cả `api` và `web` ở chế độ "watch" (tự động build lại khi có thay đổi).
+**Development Mode (Recommended for development):**
+Run the API and Web services directly on your machine in "watch" mode.
 ```bash
 pnpm dev
 ```
 
-**Chế độ Production (Chạy bản build):**
+**Production Mode (Run built version):**
+Build the entire project
 ```bash
 pnpm build
 ```
 
+Start the production server
 ```bash
 pnpm start
 ```
 
-### ✅ Option 2 — Cài đặt docker
-
+### ✅ Option 2 — Docker Compose
+Run the entire stack (API, Web, DB) in containers.
 ```bash
 docker compose up --build -d
 ```
