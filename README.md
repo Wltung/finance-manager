@@ -48,17 +48,53 @@ A comprehensive **Personal Finance Manager** web application built using a **Mon
 
 ## 🚀 Quick Start
 
-We recommend running the project using **Docker Compose**, which starts the entire environment (Frontend + Backend + DB) with a single command.
+Bạn có thể chạy dự án bằng một trong hai cách sau:
 
-### ✅ Option 1 — Run using Docker Compose (Recommended)
+### ✅ Option 1 — Cài đặt Local (Manual Setup)
 
-#### Prerequisites
+Chạy các dịch vụ (API, Web) trực tiếp trên máy của bạn.
 
-- **Docker Desktop** (or Docker Engine) installed and running
+#### Điều kiện tiên quyết
 
-#### Start
+- **Node.js** (v18+)
+- **pnpm** (v9.0.0+)
+- Một instance **PostgreSQL** đang chạy (trên local hoặc remote)
 
-From the root directory (`finance-manager/`), run:
+#### 1. Cài đặt & Cấu hình
 
+1.  **Clone dự án:**
+    ```bash
+    git clone [https://github.com/your-username/finance-manager.git](https://github.com/your-username/finance-manager.git)
+    cd finance-manager
+    ```
+
+2.  **Thiết lập Backend (API):**
+    Sao chép file `.env.example` và cấu hình các biến môi trường, đặc biệt là `DATABASE_URL` và `JWT_SECRET`.
+    ```bash
+    cp apps/api/.env.example apps/api/.env
+    ```
+    *Sau đó, mở file `apps/api/.env` và chỉnh sửa các giá trị.*
+
+3.  **Chạy Database Migration:**
+    Lệnh này sẽ áp dụng schema mới nhất vào database đã cấu hình ở bước 3.
+    ```bash
+    pnpm --filter api migration:run
+    ```
+
+#### 2. Khởi chạy
+
+**Cài đặt dependencies:**
+(Chạy từ thư mục gốc)
 ```bash
-docker compose up --build -d
+pnpm install
+```
+
+**Chế độ Development (Khuyên dùng khi lập trình):**
+Chạy cả `api` và `web` ở chế độ "watch" (tự động build lại khi có thay đổi).
+```bash
+pnpm dev
+
+**Chế độ Production (Chạy bản build):**
+```bash
+pnpm build
+pnpm start
